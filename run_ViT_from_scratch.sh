@@ -6,8 +6,6 @@
 #SBATCH --mem=20GB
 #SBATCH --job-name=ViT_from_scratch
 #SBATCH --output=ViT_from_scratch.out
-#SBATCH --mail-type=END
-#SBATCH --mail-user=tn2151@nyu.edu
 module purge
 singularity exec --nv \
             --overlay /scratch/tn2151/pytorch-example/overlay-10GB-400K.ext3:ro \
