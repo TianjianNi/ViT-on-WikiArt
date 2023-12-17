@@ -1,3 +1,4 @@
+# Implement Vision Transformer using PyTorch
 import torch
 import torch.nn as nn
 
@@ -9,14 +10,14 @@ class PatchEmbeddings(nn.Module):
         self.patch_size = patch_size
         self.in_channels = in_channels
         self.embedding_dim = embedding_dim
-        self.num_patches = int(image_size // patch_size) * int(image_size // patch_size)
+        self.num_patches = int(self.image_size // self.patch_size) ** 2
         self.projection = nn.Conv2d(in_channels=self.in_channels, out_channels=self.embedding_dim,
-                                    kernel_size=self.patch_size, stride=patch_size)
+                                    kernel_size=self.patch_size, stride=self.patch_size)
 
     def forward(self, x):  # (batch_size, in_channels, image_size, image_size)
         x = self.projection(x)  # (batch_size, embedding_dim, image_size // patch_size, image_size // patch_size)
-        x = torch.flatten(x, start_dim=2)  # (batch_size, embedding_dim, num_patches)
-        x = torch.transpose(x, dim0=1, dim1=2)  # (batch_size, num_patches, embedding_dim)
+        x = x.flatten(2)  # (batch_size, embedding_dim, num_patches)
+        x = x.transpose(1, 2)  # (batch_size, num_patches, embedding_dim)
         return x
 
 
@@ -36,7 +37,7 @@ class Embeddings(nn.Module):
     def __init__(self, image_size, patch_size, in_channels, embedding_dim):
         super().__init__()
         self.patch_embeddings = PatchEmbeddings(image_size, patch_size, in_channels, embedding_dim)
-        self.num_patches = int(image_size // patch_size) * int(image_size // patch_size)
+        self.num_patches = int(image_size // patch_size) ** 2
         self.class_token = nn.Parameter(data=torch.zeros(1, 1, embedding_dim))
         self.position_embeddings = nn.Parameter(data=torch.zeros(1, 1 + self.num_patches, embedding_dim))
 
@@ -75,7 +76,7 @@ class MultiHeadAttention(nn.Module):
         qkv = qkv.reshape(x.shape[0], x.shape[1], 3, self.num_attention_heads, self.head_dim)
         qkv = torch.permute(input=qkv, dims=(2, 0, 3, 1, 4))  # (3, batch_size, num_attention_heads, num_patches + 1, head_dim)
         query, key, value = qkv[0], qkv[1], qkv[2]
-        key_transpose = torch.transpose(input=key, dim0=-1, dim1=-2)  # (batch_size, num_attention_heads, head_dim, num_patches + 1)
+        key_transpose = torch.transpose(input=key, dim0=-2, dim1=-1)  # (batch_size, num_attention_heads, head_dim, num_patches + 1)
         dot_product = torch.matmul(input=query, other=key_transpose) * (self.head_dim ** -0.5)  # (batch_size, num_attention_heads, num_patches + 1, num_patches + 1)
         softmax = torch.softmax(input=dot_product, dim=-1)  # (batch_size, num_attention_heads, num_patches + 1, num_patches + 1)
         attention_output = torch.matmul(softmax, value)  # (batch_size, num_attention_heads, num_patches + 1, head_dim)
