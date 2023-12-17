@@ -1,0 +1,1 @@
+In the project, we use the power of deep learning to clas-sify famous artworks’ genres. We experimented with dif-ferent computer vision models such as Vision Trans-former (ViT), Inception Transformer (iFormer), and Res-Net-50. The results showed that ResNet-50 works the best in successfully classifying the genres among the tested models. 
